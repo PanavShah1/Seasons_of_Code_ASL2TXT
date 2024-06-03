@@ -1,4 +1,4 @@
-<b> Learning Image Recognition and Processing </b>
+<h2> Learning Image Recognition and Processing </h2>
 Converting Sign Language to Text
 
 Project taken up in Seasons of Code conducted by the WnCC club of IIT Bombay
