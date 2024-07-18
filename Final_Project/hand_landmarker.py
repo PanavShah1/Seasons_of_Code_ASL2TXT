@@ -19,48 +19,50 @@ def draw_landmarks_on_image(rgb_image, detection_result):
     handedness_list = detection_result.handedness
     
     annotated_image = np.copy(rgb_image)   
-    x_min, x_max, y_min, y_max = None, None, None, None
+    x_min, x_max, y_min, y_max = 0, rgb_image.shape[1], 0, rgb_image.shape[0]
     handedness = None
 
     # Loop through the detected hands to visualize.
     for idx in range(len(hand_landmarks_list)):
-        hand_landmarks = hand_landmarks_list[idx]
-        handedness = handedness_list[idx]
+        try:
+            hand_landmarks = hand_landmarks_list[idx]
+            handedness = handedness_list[idx]
 
-        # Draw the hand landmarks.
-        hand_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
-        hand_landmarks_proto.landmark.extend([
-            landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z) for landmark in hand_landmarks
-        ])
-        solutions.drawing_utils.draw_landmarks(
-            annotated_image,
-            hand_landmarks_proto,
-            solutions.hands.HAND_CONNECTIONS,
-            solutions.drawing_styles.get_default_hand_landmarks_style(),
-            solutions.drawing_styles.get_default_hand_connections_style()
-        )
+            # Draw the hand landmarks.
+            hand_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
+            hand_landmarks_proto.landmark.extend([
+                landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z) for landmark in hand_landmarks
+            ])
+            solutions.drawing_utils.draw_landmarks(
+                annotated_image,
+                hand_landmarks_proto,
+                solutions.hands.HAND_CONNECTIONS,
+                solutions.drawing_styles.get_default_hand_landmarks_style(),
+                solutions.drawing_styles.get_default_hand_connections_style()
+            )
+        
+            # Get the top left corner of the detected hand's bounding box.
+            height, width, _ = annotated_image.shape
+            x_coordinates = [landmark.x for landmark in hand_landmarks]
+            y_coordinates = [landmark.y for landmark in hand_landmarks]
+            x_min = max(int(min(x_coordinates) * width) - BUFFER_SPACE, 0)
+            x_max = min(int(max(x_coordinates) * width) + BUFFER_SPACE, width)
+            y_min = max(int(min(y_coordinates) * height) - BUFFER_SPACE, 0)
+            y_max = min(int(max(y_coordinates) * height) + BUFFER_SPACE, height)
 
-        # Get the top left corner of the detected hand's bounding box.
-        height, width, _ = annotated_image.shape
-        x_coordinates = [landmark.x for landmark in hand_landmarks]
-        y_coordinates = [landmark.y for landmark in hand_landmarks]
-        x_min = int(min(x_coordinates) * width) - BUFFER_SPACE
-        x_max = int(max(x_coordinates) * width) + BUFFER_SPACE
-        y_min = int(min(y_coordinates) * height) - BUFFER_SPACE
-        y_max = int(max(y_coordinates) * height) + BUFFER_SPACE
+            cv2.rectangle(annotated_image, (x_min, y_min), (x_max, y_max), (255, 0, 0), 2)  # Draw a blue bounding box
 
-        cv2.rectangle(annotated_image, (x_min, y_min), (x_max, y_max), (255, 0, 0), 2)  # Draw a blue bounding box
+            text_x = x_min
+            text_y = y_min - MARGIN
 
-        text_x = x_min
-        text_y = y_min - MARGIN
-
-        # Draw handedness (left or right hand) on the image.
-        cv2.putText(annotated_image, f"{handedness[0].category_name}",
-                    (text_x, text_y), cv2.FONT_HERSHEY_DUPLEX,
-                    FONT_SIZE, HANDEDNESS_TEXT_COLOR, FONT_THICKNESS, cv2.LINE_AA)
+            # Draw handedness (left or right hand) on the image.
+            cv2.putText(annotated_image, f"{handedness[0].category_name}",
+                        (text_x, text_y), cv2.FONT_HERSHEY_DUPLEX,
+                        FONT_SIZE, HANDEDNESS_TEXT_COLOR, FONT_THICKNESS, cv2.LINE_AA)
+        except Exception as e:
+            print(f"Error processing hand landmarks: {e}")
 
     return {"annotated_image": annotated_image, "coordinates": [x_min, x_max, y_min, y_max], "handedness": handedness}
-
 
 base_options = python.BaseOptions(model_asset_path='hand_landmarker.task')
 options = vision.HandLandmarkerOptions(base_options=base_options,
