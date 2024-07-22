@@ -21,12 +21,17 @@ def draw_landmarks_on_image(rgb_image, detection_result):
     annotated_image = np.copy(rgb_image)   
     x_min, x_max, y_min, y_max = 0, rgb_image.shape[1], 0, rgb_image.shape[0]
     handedness = None
+    all_coordinates = []
 
     # Loop through the detected hands to visualize.
     for idx in range(len(hand_landmarks_list)):
         try:
             hand_landmarks = hand_landmarks_list[idx]
             handedness = handedness_list[idx]
+
+            # Collect the coordinates of each landmark
+            coordinates = [(landmark.x, landmark.y, landmark.z) for landmark in hand_landmarks]
+            all_coordinates.append(coordinates)
 
             # Draw the hand landmarks.
             hand_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
@@ -62,7 +67,13 @@ def draw_landmarks_on_image(rgb_image, detection_result):
         except Exception as e:
             print(f"Error processing hand landmarks: {e}")
 
-    return {"annotated_image": annotated_image, "coordinates": [x_min, x_max, y_min, y_max], "handedness": handedness}
+    return {
+        "annotated_image": annotated_image,
+        "coordinates": [x_min, x_max, y_min, y_max],
+        "handedness": handedness,
+        "all_coordinates": all_coordinates
+    }
+
 
 base_options = python.BaseOptions(model_asset_path='hand_landmarker.task')
 options = vision.HandLandmarkerOptions(base_options=base_options,
