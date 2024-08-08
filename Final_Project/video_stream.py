@@ -17,7 +17,7 @@ from Model import TinyVGG
 
 # Load the model once
 model = TinyVGG(3, 36, 16)
-model.load_state_dict(torch.load("model_new.pth"))
+model.load_state_dict(torch.load("model_with_background.pth"))
 model.eval()
 
 transform = transforms.Compose([
